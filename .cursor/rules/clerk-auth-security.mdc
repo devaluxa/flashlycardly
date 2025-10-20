@@ -1,0 +1,315 @@
+---
+alwaysApply: true
+---
+
+# Clerk Authentication & Authorization
+
+All authentication in this project is handled by **Clerk**. Security is critical - users must ONLY be able to access their own data.
+
+## Core Authentication Files
+
+- **Middleware**: [src/middleware.ts](mdc:src/middleware.ts) - Clerk middleware configuration
+- **Database Schema**: [src/db/schema.ts](mdc:src/db/schema.ts) - Contains userId foreign keys
+
+## Getting the Current User
+
+### In Server Components
+
+```typescript
+import { auth } from "@clerk/nextjs/server";
+
+export default async function MyComponent() {
+  const { userId } = await auth();
+  
+  if (!userId) {
+    // User is not authenticated
+    redirect("/sign-in");
+  }
+  
+  // Use userId to query user's data
+}
+```
+
+### In API Routes (App Router)
+
+```typescript
+import { auth } from "@clerk/nextjs/server";
+
+export async function GET(request: Request) {
+  const { userId } = await auth();
+  
+  if (!userId) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  
+  // Use userId for data access
+}
+```
+
+### In Server Actions
+
+```typescript
+"use server";
+
+import { auth } from "@clerk/nextjs/server";
+
+export async function myServerAction() {
+  const { userId } = await auth();
+  
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+  
+  // Use userId for data access
+}
+```
+
+## Critical Security Rules
+
+### 1. ALWAYS Filter Database Queries by userId
+
+**NEVER** allow queries without userId filtering when accessing user-specific data:
+
+```typescript
+// ❌ WRONG - Exposes all users' data
+const decks = await db.select().from(decksTable);
+
+// ✅ CORRECT - Only returns current user's data
+const { userId } = await auth();
+if (!userId) throw new Error("Unauthorized");
+
+const decks = await db.select()
+  .from(decksTable)
+  .where(eq(decksTable.userId, userId));
+```
+
+### 2. ALWAYS Verify Ownership Before Operations
+
+Before updating or deleting, verify the resource belongs to the current user:
+
+```typescript
+// ✅ CORRECT - Verify ownership
+const { userId } = await auth();
+if (!userId) throw new Error("Unauthorized");
+
+// Check that the deck belongs to the user
+const [deck] = await db.select()
+  .from(decksTable)
+  .where(and(
+    eq(decksTable.id, deckId),
+    eq(decksTable.userId, userId)
+  ));
+
+if (!deck) {
+  throw new Error("Deck not found or unauthorized");
+}
+
+// Now safe to update/delete
+await db.update(decksTable)
+  .set({ title: newTitle })
+  .where(eq(decksTable.id, deckId));
+```
+
+### 3. ALWAYS Include userId When Creating Resources
+
+```typescript
+// ✅ CORRECT - Associates resource with current user
+const { userId } = await auth();
+if (!userId) throw new Error("Unauthorized");
+
+const [newDeck] = await db.insert(decksTable).values({
+  userId: userId,  // ← Critical!
+  title: "My Deck",
+  description: "Description",
+}).returning();
+```
+
+### 4. Protect All API Routes and Server Actions
+
+```typescript
+// At the start of EVERY API route or server action:
+const { userId } = await auth();
+if (!userId) {
+  return new Response("Unauthorized", { status: 401 });
+  // or throw new Error("Unauthorized");
+}
+```
+
+### 5. Verify Nested Resource Ownership
+
+When accessing cards, verify the parent deck belongs to the user:
+
+```typescript
+// ✅ CORRECT - Verify card's deck belongs to user
+const { userId } = await auth();
+if (!userId) throw new Error("Unauthorized");
+
+const result = await db.select()
+  .from(cardsTable)
+  .innerJoin(decksTable, eq(cardsTable.deckId, decksTable.id))
+  .where(and(
+    eq(cardsTable.id, cardId),
+    eq(decksTable.userId, userId)
+  ));
+
+if (result.length === 0) {
+  throw new Error("Card not found or unauthorized");
+}
+```
+
+## Common Patterns
+
+### Fetching User's Decks
+
+```typescript
+const { userId } = await auth();
+if (!userId) throw new Error("Unauthorized");
+
+const userDecks = await db.select()
+  .from(decksTable)
+  .where(eq(decksTable.userId, userId))
+  .orderBy(desc(decksTable.createdAt));
+```
+
+### Fetching Cards for User's Deck
+
+```typescript
+const { userId } = await auth();
+if (!userId) throw new Error("Unauthorized");
+
+// First verify deck ownership
+const [deck] = await db.select()
+  .from(decksTable)
+  .where(and(
+    eq(decksTable.id, deckId),
+    eq(decksTable.userId, userId)
+  ));
+
+if (!deck) throw new Error("Deck not found or unauthorized");
+
+// Now safe to get cards
+const cards = await db.select()
+  .from(cardsTable)
+  .where(eq(cardsTable.deckId, deckId));
+```
+
+### Creating a New Deck
+
+```typescript
+const { userId } = await auth();
+if (!userId) throw new Error("Unauthorized");
+
+const [newDeck] = await db.insert(decksTable).values({
+  userId: userId,
+  title: deckData.title,
+  description: deckData.description,
+}).returning();
+```
+
+### Updating a Deck
+
+```typescript
+const { userId } = await auth();
+if (!userId) throw new Error("Unauthorized");
+
+// Verify ownership in the WHERE clause
+const [updatedDeck] = await db.update(decksTable)
+  .set({ 
+    title: newTitle,
+    updatedAt: new Date(),
+  })
+  .where(and(
+    eq(decksTable.id, deckId),
+    eq(decksTable.userId, userId)
+  ))
+  .returning();
+
+if (!updatedDeck) {
+  throw new Error("Deck not found or unauthorized");
+}
+```
+
+### Deleting a Deck
+
+```typescript
+const { userId } = await auth();
+if (!userId) throw new Error("Unauthorized");
+
+// Verify ownership before deleting
+const result = await db.delete(decksTable)
+  .where(and(
+    eq(decksTable.id, deckId),
+    eq(decksTable.userId, userId)
+  ))
+  .returning();
+
+if (result.length === 0) {
+  throw new Error("Deck not found or unauthorized");
+}
+```
+
+## Security Checklist
+
+Before implementing any feature that accesses data:
+
+- [ ] Get userId from `auth()`
+- [ ] Check if userId exists (return 401 if not)
+- [ ] Filter all SELECT queries by userId (directly or through joins)
+- [ ] Verify resource ownership before UPDATE/DELETE operations
+- [ ] Include userId when creating new resources
+- [ ] For nested resources (cards in decks), verify parent ownership
+- [ ] Return appropriate error messages (401 Unauthorized, 404 Not Found)
+- [ ] Never expose other users' data in any response
+
+## What NOT to Do
+
+```typescript
+// ❌ NEVER trust client-provided userId
+async function getDeck(userId: string, deckId: string) {
+  // Client could pass any userId!
+}
+
+// ❌ NEVER skip authentication checks
+async function updateDeck(deckId: string, data: any) {
+  // Missing auth() call - anyone could access!
+  await db.update(decksTable).set(data).where(eq(decksTable.id, deckId));
+}
+
+// ❌ NEVER filter after fetching
+const allDecks = await db.select().from(decksTable);
+const userDecks = allDecks.filter(d => d.userId === userId); // Too late!
+
+// ❌ NEVER expose all data in API responses
+return Response.json({ decks: allDecks }); // Could include others' data
+```
+
+## Clerk Middleware Configuration
+
+The [middleware.ts](mdc:src/middleware.ts) file should protect routes appropriately:
+
+```typescript
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+
+const isPublicRoute = createRouteMatcher([
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/',
+]);
+
+export default clerkMiddleware((auth, request) => {
+  if (!isPublicRoute(request)) {
+    auth().protect();
+  }
+});
+
+export const config = {
+  matcher: [
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
+  ],
+};
+```
+
+## Summary
+
+**Golden Rule**: Every database operation that accesses user-specific data MUST be filtered by the authenticated user's userId. Always verify ownership before allowing access to any resource.

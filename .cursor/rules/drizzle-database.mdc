@@ -1,0 +1,117 @@
+---
+alwaysApply: true
+description: Guidelines for database interactions using Drizzle ORM
+---
+
+# Drizzle Database Interactions
+
+All database interactions in this project MUST use Drizzle ORM with the properly defined schema and queries.
+
+## Core Files
+
+- **Database Instance**: [src/db/index.ts](mdc:src/db/index.ts) - Import `db` from here
+- **Schema Definitions**: [src/db/schema.ts](mdc:src/db/schema.ts) - Import table definitions from here
+- **Configuration**: [drizzle.config.ts](mdc:drizzle.config.ts)
+
+## Required Imports
+
+```typescript
+import { db } from "@/db";
+import { decksTable, cardsTable } from "@/db/schema";
+```
+
+## Database Operations
+
+### Query Examples
+
+**Select queries:**
+```typescript
+import { eq, and, desc } from "drizzle-orm";
+
+// Get all decks for a user
+const userDecks = await db.select().from(decksTable).where(eq(decksTable.userId, userId));
+
+// Get a specific card
+const card = await db.select().from(cardsTable).where(eq(cardsTable.id, cardId));
+
+// Get cards for a deck
+const deckCards = await db.select().from(cardsTable).where(eq(cardsTable.deckId, deckId));
+```
+
+**Insert queries:**
+```typescript
+// Insert a new deck
+const [newDeck] = await db.insert(decksTable).values({
+  userId: userId,
+  title: "My Deck",
+  description: "Description here",
+}).returning();
+
+// Insert a new card
+const [newCard] = await db.insert(cardsTable).values({
+  deckId: deckId,
+  front: "Question",
+  back: "Answer",
+}).returning();
+```
+
+**Update queries:**
+```typescript
+// Update a deck
+const [updatedDeck] = await db.update(decksTable)
+  .set({ 
+    title: "New Title",
+    updatedAt: new Date(),
+  })
+  .where(eq(decksTable.id, deckId))
+  .returning();
+```
+
+**Delete queries:**
+```typescript
+// Delete a deck (cascade will delete associated cards)
+await db.delete(decksTable).where(eq(decksTable.id, deckId));
+
+// Delete a card
+await db.delete(cardsTable).where(eq(cardsTable.id, cardId));
+```
+
+## Important Rules
+
+1. **Never use raw SQL queries** - Always use Drizzle's query builder
+2. **Always import schema tables** from `@/db/schema` when performing queries
+3. **Use type-safe operators** from `drizzle-orm` (eq, and, or, desc, etc.)
+4. **Use `.returning()`** when you need the inserted/updated data back
+5. **Respect foreign key constraints** - cardsTable.deckId references decksTable.id
+6. **Use transactions** for operations that need to be atomic:
+   ```typescript
+   await db.transaction(async (tx) => {
+     const [deck] = await tx.insert(decksTable).values({...}).returning();
+     await tx.insert(cardsTable).values({...});
+   });
+   ```
+
+## Schema Tables
+
+- `decksTable`: User flashcard decks (id, userId, title, description, timestamps)
+- `cardsTable`: Individual flashcards (id, deckId, front, back, timestamps)
+
+## TypeScript Types
+
+Drizzle automatically infers types from the schema. Use type inference:
+
+```typescript
+import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
+import { decksTable, cardsTable } from "@/db/schema";
+
+type Deck = InferSelectModel<typeof decksTable>;
+type NewDeck = InferInsertModel<typeof decksTable>;
+type Card = InferSelectModel<typeof cardsTable>;
+type NewCard = InferInsertModel<typeof cardsTable>;
+```
+
+## Migrations
+
+- Run `npm run db:generate` to generate migrations after schema changes
+- Run `npm run db:migrate` to apply migrations to the database
+- Always commit migration files to version control

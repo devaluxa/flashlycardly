@@ -1,0 +1,74 @@
+---
+description: Guidelines for using shadcn UI components in the project
+alwaysApply: false
+---
+# shadcn UI Component Guidelines
+
+This project uses **shadcn UI** for all UI elements and components.
+
+## Core Principles
+
+1. **Always use shadcn UI components** - Do not create custom UI components from scratch when a shadcn UI component exists
+2. **Import from `@/components/ui`** - All shadcn UI components should be imported from the `@/components/ui` directory
+3. **Follow shadcn conventions** - Maintain the shadcn component structure and patterns
+
+## Adding New Components
+
+When a new UI component is needed:
+1. First check if shadcn UI has a component for that purpose
+2. Install using: `npx shadcn@latest add [component-name]`
+3. Use the installed component from `@/components/ui`
+
+## Common Components
+
+Prefer these shadcn UI components:
+- **Button** - For all button elements
+- **Input** - For form inputs
+- **Card** - For card layouts
+- **Dialog** - For modals and dialogs
+- **Select** - For dropdowns
+- **Form** - For forms with validation
+- **Table** - For data tables
+- **Toast** - For notifications
+- **Tabs** - For tabbed interfaces
+- **Accordion** - For collapsible content
+- **Alert** - For alert messages
+- **Badge** - For badges and tags
+- **Checkbox** - For checkboxes
+- **Radio Group** - For radio buttons
+
+## Styling
+
+- Use Tailwind CSS for custom styling
+- Follow the existing theme configuration in [components.json](mdc:components.json)
+- Maintain consistent spacing and color schemes as defined by shadcn UI
+
+## Example Usage
+
+```tsx
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+
+export function MyComponent() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Title</CardTitle>
+        <CardDescription>Description</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Input placeholder="Enter text..." />
+      </CardContent>
+      <CardFooter>
+        <Button>Submit</Button>
+      </CardFooter>
+    </Card>
+  )
+}
+```
+
+## Reference
+
+- shadcn UI Documentation: https://ui.shadcn.com
+- Components Reference: https://ui.shadcn.com/docs/components
