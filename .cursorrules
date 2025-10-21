@@ -1,0 +1,137 @@
+# shadcn UI Component Guidelines
+
+This project uses **shadcn UI EXCLUSIVELY** for all UI elements and components.
+
+## Core Principles
+
+1. **ONLY use shadcn UI components** - NEVER create custom UI components from scratch. If a component doesn't exist in shadcn UI, create a composition of existing shadcn components
+2. **NEVER use other UI libraries** - Do not install or use Material-UI, Ant Design, Chakra UI, or any other component library
+3. **Import from `@/components/ui`** - All shadcn UI components must be imported from the `@/components/ui` directory
+4. **Follow shadcn conventions** - Maintain the shadcn component structure and patterns
+5. **Use Dark Theme by Default** - All UI implementations must use the dark theme
+
+## Dark Theme Configuration
+
+This project uses shadcn UI's **dark theme as the default**. 
+
+### Implementation
+
+The root layout should include dark mode configuration:
+
+```tsx
+// app/layout.tsx
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className="dark">
+      <body className={inter.className}>
+        {children}
+      </body>
+    </html>
+  )
+}
+```
+
+### Dark Theme Classes
+
+- Apply `className="dark"` to the `<html>` element for app-wide dark mode
+- Use dark theme color variables (bg-background, text-foreground, etc.)
+- shadcn UI components automatically adapt to dark mode when the `dark` class is present
+
+### Color Scheme
+
+Use the default shadcn dark theme colors:
+- `bg-background` - Dark background
+- `text-foreground` - Light text
+- `bg-card` - Card background
+- `bg-primary` - Primary accent color
+- `bg-secondary` - Secondary colors
+- `border` - Border colors (automatically adjusted for dark mode)
+
+## Adding New Components
+
+When a new UI component is needed:
+1. **First**, check if shadcn UI has a component for that purpose at https://ui.shadcn.com/docs/components
+2. **Install** using: `npx shadcn@latest add [component-name]`
+3. **Use** the installed component from `@/components/ui`
+4. **If no exact match exists**, compose multiple shadcn components together
+5. **NEVER** build a custom component from scratch or import from other libraries
+
+## Required Components
+
+Always use these shadcn UI components (NEVER create custom alternatives):
+
+- **Button** - For all button elements
+- **Input** - For form inputs
+- **Card** - For card layouts
+- **Dialog** - For modals and dialogs
+- **Select** - For dropdowns
+- **Form** - For forms with validation
+- **Table** - For data tables
+- **Sonner/Toast** - For notifications
+- **Tabs** - For tabbed interfaces
+- **Accordion** - For collapsible content
+- **Alert** - For alert messages
+- **Badge** - For badges and tags
+- **Checkbox** - For checkboxes
+- **Radio Group** - For radio buttons
+- **Dropdown Menu** - For dropdown menus
+- **Label** - For form labels
+
+## Styling
+
+- **Use Tailwind CSS** for custom styling (shadcn UI is built on Tailwind)
+- **Follow the existing theme** configuration in `components.json`
+- **Maintain dark theme** - Use dark mode color variables
+- **Stay consistent** with spacing and color schemes defined by shadcn UI
+- **Never override** dark theme styles to make them light
+
+## Example Usage
+
+```tsx
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+
+export function MyComponent() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Title</CardTitle>
+        <CardDescription>Description</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Input placeholder="Enter text..." />
+      </CardContent>
+      <CardFooter>
+        <Button>Submit</Button>
+      </CardFooter>
+    </Card>
+  )
+}
+```
+
+## What NOT to Do
+
+```tsx
+// ❌ NEVER create custom button components
+export function CustomButton() {
+  return <button className="...">Click me</button>;
+}
+
+// ❌ NEVER import from other UI libraries
+import { Button } from "@mui/material";
+import { Button } from "antd";
+
+// ❌ NEVER override dark theme to light
+<html lang="en" className="light"> {/* Wrong! */}
+
+// ✅ ALWAYS use shadcn UI components
+import { Button } from "@/components/ui/button";
+```
+
+## Reference
+
+- shadcn UI Documentation: https://ui.shadcn.com
+- Components Reference: https://ui.shadcn.com/docs/components
+- Dark Mode Documentation: https://ui.shadcn.com/docs/dark-mode
+

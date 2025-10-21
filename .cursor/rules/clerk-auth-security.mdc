@@ -17,13 +17,14 @@ All authentication in this project is handled by **Clerk**. Security is critical
 
 ```typescript
 import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
 export default async function MyComponent() {
   const { userId } = await auth();
   
   if (!userId) {
-    // User is not authenticated
-    redirect("/sign-in");
+    // User is not authenticated - redirect to home page where sign-in/sign-up buttons are located
+    redirect("/");
   }
   
   // Use userId to query user's data
@@ -287,13 +288,13 @@ return Response.json({ decks: allDecks }); // Could include others' data
 
 The [middleware.ts](mdc:src/middleware.ts) file should protect routes appropriately:
 
+**Note**: This app does not have separate sign-in/sign-up pages. The home page (`/`) contains the sign-in and sign-up buttons, so it must be public. All other routes (like `/dashboard`) are protected.
+
 ```typescript
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 const isPublicRoute = createRouteMatcher([
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/',
+  '/', // Home page with sign-in/sign-up buttons
 ]);
 
 export default clerkMiddleware((auth, request) => {

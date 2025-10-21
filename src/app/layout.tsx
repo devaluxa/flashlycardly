@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-import {
-  ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from "@clerk/nextjs";
+import { ClerkProvider, SignedIn, UserButton } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import "./globals.css";
 
@@ -35,38 +28,44 @@ export default function RootLayout({
           fontFamily: "var(--font-poppins), sans-serif",
         },
       }}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
     >
       <html lang="en" className="dark" suppressHydrationWarning>
         <body
           className={`${poppins.variable} antialiased`}
           suppressHydrationWarning
         >
-          <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
-              <div className="mr-4 flex">
-                <a className="mr-6 flex items-center space-x-2" href="/">
-                  <span className="font-bold">FlashyCardy</span>
-                </a>
+          {/* Header for signed-in users only */}
+          <SignedIn>
+            <header className="border-b border-border/40 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60 sticky top-0 z-50">
+              <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4">
+                <div className="flex items-center">
+                  <a href="/dashboard" className="text-xl font-bold text-white hover:text-gray-300 transition-colors">
+                    FlashyCardy
+                  </a>
+                </div>
+                <div className="flex items-center gap-4">
+                  <UserButton 
+                    appearance={{
+                      elements: {
+                        avatarBox: "w-10 h-10 ring-2 ring-white/20 hover:ring-white/40 transition-all",
+                        userButtonPopoverCard: "bg-black border-white/20",
+                        userButtonPopoverActions: "bg-black",
+                        userButtonPopoverActionButton: "text-white hover:bg-white/10",
+                        userButtonPopoverActionButtonText: "text-white",
+                        userButtonPopoverFooter: "hidden"
+                      }
+                    }}
+                    afterSignOutUrl="/"
+                  />
+                </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <SignedOut>
-                  <SignInButton mode="modal">
-                    <button className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2">
-                      Sign In
-                    </button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <button className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
-                      Sign Up
-                    </button>
-                  </SignUpButton>
-                </SignedOut>
-                <SignedIn>
-                  <UserButton />
-                </SignedIn>
-              </div>
-            </div>
-          </header>
+            </header>
+          </SignedIn>
+          
           {children}
         </body>
       </html>
