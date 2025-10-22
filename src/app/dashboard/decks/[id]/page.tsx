@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FlipCard } from "@/components/flip-card";
 import { AddCardDialog } from "@/components/add-card-dialog";
 import { EditDeckDialog } from "@/components/edit-deck-dialog";
+import { DeckContent } from "@/components/deck-content";
 
 interface DeckPageProps {
   params: Promise<{
@@ -67,44 +68,8 @@ export default async function DeckPage({ params }: DeckPageProps) {
             </div>
           </div>
 
-          {/* Cards Count */}
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground">
-              {cards.length} {cards.length === 1 ? "card" : "cards"} in this deck
-            </p>
-            <AddCardDialog deckId={deckId} deckTitle={deck.title} />
-          </div>
-
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cards.length === 0 ? (
-              <Card className="col-span-full border-border/40">
-                <CardHeader>
-                  <CardTitle>No Cards Yet</CardTitle>
-                  <p className="text-muted-foreground text-sm mt-2">
-                    Add your first flashcard to get started studying!
-                  </p>
-                </CardHeader>
-              </Card>
-            ) : (
-              cards.map((card) => (
-                <FlipCard 
-                  key={card.id}
-                  front={card.front}
-                  back={card.back}
-                />
-              ))
-            )}
-          </div>
-
-          {/* Study Mode Button */}
-          {cards.length > 0 && (
-            <div className="flex justify-center pt-4">
-              <Button size="lg" className="font-semibold">
-                Start Study Session
-              </Button>
-            </div>
-          )}
+          {/* Deck Content (Client Component for Edit Mode) */}
+          <DeckContent deckId={deckId} deckTitle={deck.title} initialCards={cards} />
         </div>
       </div>
     </div>

@@ -6,11 +6,15 @@ import {
   createCardManuallySchema,
   createCardWithAISchema,
   deleteCardSchema,
+  batchUpdateCardsSchema,
+  batchUpdateAndDeleteCardsSchema,
   type CreateCardManuallyInput,
   type CreateCardWithAIInput,
   type DeleteCardInput,
+  type BatchUpdateCardsInput,
+  type BatchUpdateAndDeleteCardsInput,
 } from "@/lib/validations/card";
-import { createCardInDb, deleteCardFromDb } from "@/db/queries/cards";
+import { createCardInDb, deleteCardFromDb, batchUpdateCardsInDb, batchUpdateAndDeleteCardsInDb } from "@/db/queries/cards";
 import { getDeckById, getDeckCards } from "@/db/queries/decks";
 
 export async function createCardManually(input: CreateCardManuallyInput) {
@@ -143,6 +147,67 @@ async function generateCardWithAI(
   return {
     front: selectedTemplate.front,
     back: `${selectedTemplate.back}\n\n💡 Tip: Edit this card to add specific details about ${deckTopic}!`,
+  };
+}
+
+export async function batchUpdateCards(input: BatchUpdateCardsInput) {
+  // 1. Validate input with Zod
+  const validatedData = batchUpdateCardsSchema.parse(input);
+
+  // 2. Authenticate user
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  // 3. Verify deck ownership and update cards using query helper
+  const updatedCards = await batchUpdateCardsInDb(
+    validatedData.deckId,
+    userId,
+    validatedData.cards
+  );
+
+  if (!updatedCards) {
+    throw new Error("Deck not found or unauthorized");
+  }
+
+  // 4. Revalidate relevant paths
+  revalidatePath(`/dashboard/decks/${validatedData.deckId}`);
+  revalidatePath("/dashboard");
+
+  return { success: true, cards: updatedCards };
+}
+
+export async function batchUpdateAndDeleteCards(input: BatchUpdateAndDeleteCardsInput) {
+  // 1. Validate input with Zod
+  const validatedData = batchUpdateAndDeleteCardsSchema.parse(input);
+
+  // 2. Authenticate user
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  // 3. Verify deck ownership and update/delete cards using query helper
+  const result = await batchUpdateAndDeleteCardsInDb(
+    validatedData.deckId,
+    userId,
+    validatedData.cardsToUpdate,
+    validatedData.cardIdsToDelete
+  );
+
+  if (!result) {
+    throw new Error("Deck not found or unauthorized");
+  }
+
+  // 4. Revalidate relevant paths
+  revalidatePath(`/dashboard/decks/${validatedData.deckId}`);
+  revalidatePath("/dashboard");
+
+  return { 
+    success: true, 
+    updated: result.updated.length,
+    deleted: result.deleted,
   };
 }
 

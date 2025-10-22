@@ -15,8 +15,28 @@ export const deleteCardSchema = z.object({
   deckId: z.number(), // For revalidation
 });
 
+export const updateCardSchema = z.object({
+  id: z.number(),
+  front: z.string().min(1, "Front content is required").max(1000, "Front content is too long"),
+  back: z.string().min(1, "Back content is required").max(1000, "Back content is too long"),
+});
+
+export const batchUpdateCardsSchema = z.object({
+  deckId: z.number(),
+  cards: z.array(updateCardSchema).min(1, "At least one card must be updated"),
+});
+
+export const batchUpdateAndDeleteCardsSchema = z.object({
+  deckId: z.number(),
+  cardsToUpdate: z.array(updateCardSchema),
+  cardIdsToDelete: z.array(z.number()),
+});
+
 // Export TypeScript types from Zod schemas
 export type CreateCardManuallyInput = z.infer<typeof createCardManuallySchema>;
 export type CreateCardWithAIInput = z.infer<typeof createCardWithAISchema>;
 export type DeleteCardInput = z.infer<typeof deleteCardSchema>;
+export type UpdateCardInput = z.infer<typeof updateCardSchema>;
+export type BatchUpdateCardsInput = z.infer<typeof batchUpdateCardsSchema>;
+export type BatchUpdateAndDeleteCardsInput = z.infer<typeof batchUpdateAndDeleteCardsSchema>;
 

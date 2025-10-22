@@ -29,6 +29,7 @@ export async function getDeckById(deckId: number, userId: string) {
 /**
  * Fetch all cards for a specific deck
  * Verifies deck ownership through join
+ * Orders by ID (creation order) to maintain consistent sort order
  */
 export async function getDeckCards(deckId: number, userId: string) {
   const result = await db.select({ card: cardsTable })
@@ -37,7 +38,8 @@ export async function getDeckCards(deckId: number, userId: string) {
     .where(and(
       eq(cardsTable.deckId, deckId),
       eq(decksTable.userId, userId)
-    ));
+    ))
+    .orderBy(cardsTable.id);
   
   return result.map(r => r.card);
 }
