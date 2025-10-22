@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { ClerkProvider, SignedIn, UserButton } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -67,6 +68,7 @@ export default function RootLayout({
           </SignedIn>
           
           {children}
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>

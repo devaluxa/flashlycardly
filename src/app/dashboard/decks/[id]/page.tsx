@@ -2,10 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getDeckById, getDeckCards } from "@/db/queries/decks";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FlipCard } from "@/components/flip-card";
-import { AddCardDialog } from "@/components/add-card-dialog";
 import { EditDeckDialog } from "@/components/edit-deck-dialog";
 import { DeckContent } from "@/components/deck-content";
 
@@ -16,11 +13,14 @@ interface DeckPageProps {
 }
 
 export default async function DeckPage({ params }: DeckPageProps) {
-  const { userId } = await auth();
+  const { userId, has } = await auth();
   
   if (!userId) {
     redirect("/");
   }
+
+  // Check if user has AI generation feature
+  const hasAIFeature = has({ feature: "ai_flash_card_generation" });
 
   const { id } = await params;
   const deckId = parseInt(id, 10);
@@ -69,7 +69,13 @@ export default async function DeckPage({ params }: DeckPageProps) {
           </div>
 
           {/* Deck Content (Client Component for Edit Mode) */}
-          <DeckContent deckId={deckId} deckTitle={deck.title} initialCards={cards} />
+          <DeckContent 
+            deckId={deckId} 
+            deckTitle={deck.title} 
+            deckDescription={deck.description || ""}
+            hasAIFeature={hasAIFeature}
+            initialCards={cards} 
+          />
         </div>
       </div>
     </div>

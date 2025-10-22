@@ -44,7 +44,7 @@ export function FlipCard({ front, back }: FlipCardProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex items-center justify-center h-[calc(100%-80px)]">
-              <p className="text-center text-lg px-4 group-hover:scale-105 transition-transform duration-300">
+              <p className="text-center text-base px-4 py-2 group-hover:scale-105 transition-transform duration-300 overflow-y-auto max-h-full">
                 {front}
               </p>
             </CardContent>
@@ -67,7 +67,7 @@ export function FlipCard({ front, back }: FlipCardProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex items-center justify-center h-[calc(100%-80px)]">
-              <p className="text-center text-lg px-4 group-hover:scale-105 transition-transform duration-300">
+              <p className="text-center text-base px-4 py-2 group-hover:scale-105 transition-transform duration-300 overflow-y-auto max-h-full">
                 {back}
               </p>
             </CardContent>
